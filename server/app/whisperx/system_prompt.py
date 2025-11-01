@@ -27,14 +27,13 @@ SENTENCE_CLASSIFICATION_PROMPT = """
 문장: [원본 문장]
 분류: CLAIM 또는 FACT
 
-content: {__CONTENT__}
 """
 
-def combine_classification_prompt(content) -> str:
+def get_classification_prompt() -> str:
     """
     문장 분류를 위한 시스템 프롬프트 반환
     
     Returns:
         str: 시스템 프롬프트
     """
-    return SENTENCE_CLASSIFICATION_PROMPT.replace("{__CONTENT__}", content)
+    return SENTENCE_CLASSIFICATION_PROMPT

@@ -6,4 +6,5 @@ yt-dlp==2025.10.22
 whisperx==3.7.4
 torch
 torchaudio
-ffmpeg-python 
+ffmpeg-python
+google-generativeai 

@@ -7,6 +7,9 @@ from threading import Lock
 from app.whisperx.schemas import STTResponse, TranscriptionSegment
 
 
+def exist_text_translate(path: str) -> bool:
+    return os.path.exists(path)
+
 class WhisperXService:
     _instance = None
     _lock = Lock()
@@ -96,7 +99,7 @@ class WhisperXService:
         # 언어 감지 결과
         detected_language = result.get("language", language or "en")
         
-        # 정렬 모델 로드 및 정렬 수행
+        # 정렬 모델 로드 및 정렬 수행 
         try:
             align_model, metadata = self._load_align_model(detected_language)
             if not align_model or not metadata:
