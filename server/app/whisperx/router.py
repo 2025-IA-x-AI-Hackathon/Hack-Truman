@@ -1,4 +1,5 @@
 import asyncio
+import os
 from fastapi import APIRouter, HTTPException, BackgroundTasks
 from app.whisperx.service import WhisperXService
 from app.whisperx.graph_service import ArgumentGraphService
@@ -11,11 +12,13 @@ from app.whisperx.schemas import (
 from app.whisperx.system_prompt import get_classification_prompt
 from google import genai
 from typing import List, Optional
-from app.whisperx.convert_claim_fact_mapped import convert_to_claim_evidence
+from dotenv import load_dotenv
+
+load_dotenv()
 
 router = APIRouter()
 # 싱글톤 인스턴스 사용
-key = key
+key = os.getenv("GOOGLE_GEMINI_KEY")
 whisperx_service = WhisperXService.get_instance()
 graph_service = ArgumentGraphService(key=key)
 
