@@ -6,7 +6,8 @@ CLAIM과 FACT 간의 관계를 분석하여 그래프로 구성
 import re
 import os
 from typing import List, Tuple
-from google import genai
+# from google import genai
+import google.generativeai as genai
 from app.whisperx.schemas import (
     ClassifiedSegment, 
     GraphEdge, 
@@ -18,7 +19,7 @@ from app.whisperx.system_prompt import RELATIONSHIP_PROMPT
 class ArgumentGraphService:
     def __init__(self, key):
         """그래프 분석 서비스 초기화"""
-        self.client = genai.Client(api_key=key)
+        self.client = genai.configure(api_key=key)
     
     def parse_classification_result(self, classification_text: str) -> SentenceType:
         """
@@ -58,7 +59,7 @@ class ArgumentGraphService:
             """
 
             response = self.client.models.generate_content(
-                model=os.getenv(GOOGLE_GEMINI_MODEL),
+                model=os.getenv("GOOGLE_GEMINI_MODEL"),
                 contents=prompt
             )
             
