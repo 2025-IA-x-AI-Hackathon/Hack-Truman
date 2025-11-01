@@ -1,5 +1,6 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from app.youtube.router import router as youtube_router
 
 app = FastAPI(
     title="STT & OpenAI API",
@@ -15,7 +16,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# app.include_router(stt_router, prefix="/api/youtube", tags=["STT"])
+app.include_router(youtube_router, prefix="/api/youtube", tags=["YouTube"])
 
 @app.get("/")
 async def root():
