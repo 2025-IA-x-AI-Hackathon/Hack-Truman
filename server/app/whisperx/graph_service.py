@@ -4,6 +4,7 @@ CLAIM과 FACT 간의 관계를 분석하여 그래프로 구성
 """
 
 import re
+import os
 from typing import List, Tuple
 from google import genai
 from app.whisperx.schemas import (
@@ -12,31 +13,12 @@ from app.whisperx.schemas import (
     ArgumentGraph,
     SentenceType
 )
-
+from app.whisperx.system_prompt import RELATIONSHIP_PROMPT
 
 class ArgumentGraphService:
     def __init__(self, key):
         """그래프 분석 서비스 초기화"""
         self.client = genai.Client(api_key=key)
-        self.relationship_prompt = """
-당신은 논증 분석 전문가입니다. 주어진 두 문장 간의 관계를 분석해주세요.
-
-관계 유형:
-1. **supports**: 두 번째 문장이 첫 번째 문장을 뒷받침하거나 지지함
-2. **contradicts**: 두 번째 문장이 첫 번째 문장과 모순되거나 반박함  
-3. **relates**: 두 문장이 관련이 있지만 직접적인 지지/반박 관계는 아님
-4. **none**: 두 문장 간에 의미있는 관계가 없음
-
-분석 기준:
-- FACT가 CLAIM을 뒷받침하는지 확인
-- 논리적 연결성 고려
-- 시간적 순서 고려 (앞선 문장이 뒤의 문장에 영향)
-
-다음 형식으로 응답해주세요:
-관계: supports|contradicts|relates|none
-신뢰도: 0.0-1.0
-이유: [관계 판단 근거]
-"""
     
     def parse_classification_result(self, classification_text: str) -> SentenceType:
         """
@@ -67,15 +49,16 @@ class ArgumentGraphService:
             Tuple[str, float]: (관계 유형, 신뢰도)
         """
         try:
-            prompt = f"""{self.relationship_prompt}
+            prompt = f"""{RELATIONSHIP_PROMPT}
 
-문장 1 ({segment1.classification}): {segment1.text}
-문장 2 ({segment2.classification}): {segment2.text}
+                문장 1 ({segment1.classification}): {segment1.text}
+                문장 2 ({segment2.classification}): {segment2.text}
 
-두 문장 간의 관계를 분석해주세요."""
+                두 문장 간의 관계를 분석해주세요.
+            """
 
             response = self.client.models.generate_content(
-                model="gemini-2.5-flash-lite",
+                model=os.getenv(GOOGLE_GEMINI_MODEL),
                 contents=prompt
             )
             
