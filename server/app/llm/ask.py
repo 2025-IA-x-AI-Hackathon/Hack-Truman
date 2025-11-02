@@ -334,11 +334,11 @@ async def _judge_once(claim: str) -> tuple[str, float, str, list[dict]]:
 
 async def _emit_to_socket(payload: dict) -> dict:
     """
-    1) HTTP POST 우선 시도 (기본: http://localhost:5173/api/socket)
+    1) HTTP POST 우선 시도 (기본: http://localhost:5174/api/socket)
     2) 실패 시 websockets로 ws://localhost:5173 전송 시도
     """
-    post_url = os.getenv("SOCKET_POST_URL", "http://localhost:5173/api/socket")
-    ws_url   = os.getenv("SOCKET_WS_URL", "ws://localhost:5173")
+    post_url = os.getenv("SOCKET_POST_URL", "http://localhost:5174/api/socket")
+    ws_url   = os.getenv("SOCKET_WS_URL", "ws://localhost:5174")
 
     sent_via = None
     last_error = None
@@ -370,16 +370,43 @@ async def _emit_to_socket(payload: dict) -> dict:
     return {"sent": False, "via": None, "error": last_error}
 
 
-# ---------------- /ask 엔드포인트 (변경됨) ---------------- #
+class AskRequest(BaseModel):
+    # 새로 추가: text(레거시 입력)도 허용
+    text: str | None = None
+    argument_graph: ArgumentGraph | None = None
+
 @router.post("/ask")
 async def ask_llm(req: AskRequest):
-    nodes = req.argument_graph.nodes if req and req.argument_graph and req.argument_graph.nodes else []
-    if not nodes:
-        raise HTTPException(400, "argument_graph.nodes is required and must be non-empty")
+    # 1) 신규 포맷 정상 케이스
+    ag = req.argument_graph
 
-    # 각 노드별 판정 실행 (순차 실행: 공급자 내부는 비동기 병렬)
+    # 2) 레거시 포맷(text 안에 JSON 문자열)
+    if ag is None and req.text:
+        try:
+            maybe = json.loads(req.text)
+            if not isinstance(maybe, dict) or "argument_graph" not in maybe:
+                raise ValueError("`text`에 argument_graph가 없습니다.")
+            ag = ArgumentGraph(**maybe["argument_graph"])
+        except Exception as e:
+            raise HTTPException(
+                status_code=400,
+                detail=f"레거시 입력 파싱 실패: {e}. "
+                       "body에 {\"argument_graph\": {...}} 형식으로 보내거나, "
+                       "text에는 해당 JSON을 정확히 넣어주세요."
+            )
+
+    if ag is None or not ag.nodes:
+        raise HTTPException(
+            status_code=400,
+            detail="argument_graph.nodes 가 비어있습니다. "
+                   "최상위에 {\"argument_graph\": {\"nodes\": [...], \"edges\": []}} 형태로 보내주세요."
+        )
+
+    nodes = ag.nodes
+
+    # 이하 기존 로직 동일 -------------------------
     result_map: dict[str, dict] = {}
-    per_node_debug: dict[str, dict] = {}  # 필요 시 클라이언트 디버깅용(옵션)
+    per_node_debug: dict[str, dict] = {}
 
     for idx, node in enumerate(nodes, start=1):
         cls = (node.classification or "").strip().upper()
@@ -389,7 +416,6 @@ async def ask_llm(req: AskRequest):
         final, score, explanation, panel = await _judge_once(node.text)
 
         result_map[out_key] = _build_output_entry(node, score, explanation)
-        # 선택적 디버그 부가정보(원하면 주석 해제)
         per_node_debug[out_key] = {
             "node_id": node.id,
             "classification": cls,
@@ -398,22 +424,12 @@ async def ask_llm(req: AskRequest):
             "panel": panel
         }
 
-    # 요청하신 형식에 최대한 맞춰, 단순 키:오브젝트 객체로만 구성해 반환
-    # 예)
-    # {
-    #   "fact_1": {...},
-    #   "claim_2": {...}
-    # }
     payload_for_socket = result_map
-
-    # 소켓 전송 시도
     socket_report = await _emit_to_socket(payload_for_socket)
 
-    # API 응답에도 결과를 포함해 줌
     return {
         "ok": True,
         "sent_to_socket": socket_report,
         "result": result_map,
-        # 필요 시 주석 해제해서 디버깅 확인
         # "debug": per_node_debug
     }
