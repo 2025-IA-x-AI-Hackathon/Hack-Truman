@@ -36,8 +36,8 @@ export const useSocket = (url = 'ws://localhost:8000/ws/analyze') => {
     wsRef.current.onmessage = (event) => {
       try {
         const message = JSON.parse(event.data);
-        if (message.stage && handlersRef.current[message.stage]) {
-          handlersRef.current[message.stage](message.data || message);
+        if (message.step && handlersRef.current[message.step]) {
+          handlersRef.current[message.step](message.data || message);
         }
       } catch (error) {
         console.error('Error parsing WebSocket message:', error);
