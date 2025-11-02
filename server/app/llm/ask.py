@@ -1,7 +1,9 @@
-# app/llm/router.py
 import os, json, asyncio, httpx
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
+from dotenv import load_dotenv, find_dotenv
+load_dotenv(find_dotenv(usecwd=True), override=True)
+
 
 router = APIRouter()
 
@@ -143,14 +145,16 @@ async def _wrap(provider_name: str, coro):
     except Exception as e:
         return {"provider": provider_name, "error": str(e)}
 
-# ---------------- Ollama ---------------- #
+# ---------------- OpenAI (ChatGPT) ---------------- #
+# Ollama 대신 OpenAI(ChatGPT) 호출 함수 추가
+async def call_openai(model_id: str, claim: str) -> dict:
+    api_key = os.getenv("OPENAI_API_KEY")
+    if not api_key:
+        raise HTTPException(500, "OPENAI_API_KEY is not set")
 
-async def call_ollama(model_id: str, claim: str) -> dict:
-    host_url = os.getenv("OLLAMA_HOST_URL")
-    if not host_url:
-        raise HTTPException(500, "OLLAMA_HOST_URL is not set")
-
-    url = f"{host_url}/v1/chat/completions"
+    url = "https://api.openai.com/v1/chat/completions"
+    headers = {"Authorization": f"Bearer {api_key}", "Content-Type": "application/json"}
+    
     body = {
         "model": model_id,
         "response_format": {"type": "json_object"},
@@ -159,25 +163,26 @@ async def call_ollama(model_id: str, claim: str) -> dict:
             {"role": "user", "content": JSON_PROMPT.format(claim=claim)}
         ],
         "temperature": 0.0,
-        "max_tokens": 256
+        "max_tokens": 1024 # 프롬프트가 요구하는 JSON이 길 수 있으므로 256보다 넉넉하게 설정
     }
 
     try:
-        async with httpx.AsyncClient(timeout=120.0) as client:
-            resp = await client.post(url, json=body)
+        async with httpx.AsyncClient(timeout=120.0, trust_env=False) as client:
+            resp = await client.post(url, headers=headers, json=body)
         resp.raise_for_status()
         payload = resp.json()
         content = payload["choices"][0]["message"]["content"]
         if not content:
-            raise ValueError("Empty response from Ollama")
+            raise ValueError("Empty response from OpenAI")
         parsed = _safe_json(content)
         return _normalize_judgement(parsed)
     except httpx.HTTPStatusError as e:
-        raise HTTPException(e.response.status_code, f"Ollama API error: {e.response.text}")
+        raise HTTPException(e.response.status_code, f"OpenAI API error: {e.response.text}")
     except httpx.ConnectError:
-        raise HTTPException(504, f"Failed to connect to Ollama server at {host_url}. Check Security Group and if Ollama is running.")
+        raise HTTPException(504, "Failed to connect to OpenAI API.")
     except Exception as e:
-        raise HTTPException(502, f"Ollama request error ({model_id}): {e}")
+        raise HTTPException(502, f"OpenAI request error ({model_id}): {e}")
+
 
 # ---------------- Google Gemini ---------------- #
 
@@ -235,7 +240,7 @@ async def call_groq(model_id: str, claim: str) -> dict:
                 {"role": "user", "content": JSON_PROMPT.format(claim=claim)}
             ],
             "temperature": 0.0,
-            "max_tokens": 256,
+            "max_tokens": 1024, # JSON 응답이 길 수 있으므로 1024로 상향
             "response_format": {"type": "json_object"}
         }
         async with httpx.AsyncClient(timeout=60.0) as client:
@@ -288,16 +293,17 @@ async def ask_llm(req: AskRequest):
         raise HTTPException(400, "text is required")
 
     # 환경변수에서 모델 읽기 (기본값 포함)
-    ollama_model = os.getenv("OLLAMA_MODEL")
+    # --- Ollama -> OpenAI 로 변경 ---
+    openai_model = os.getenv("OPENAI_MODEL") or "gpt-4o-mini" 
     gemini_model = os.getenv("GEMINI_MODEL") or "gemini-1.5-flash-latest"
     groq_model   = os.getenv("GROQ_MODEL")   or "llama-3.1-70b-versatile"
 
     tasks = []
-    if ollama_model:
-        tasks.append(asyncio.create_task(_wrap(f"ollama:{ollama_model}", call_ollama(ollama_model, claim))))
-    else:
-        # 필요 없다면 생략 가능
-        pass
+    
+    # --- Ollama -> OpenAI 로 변경 ---
+    # OpenAI/ChatGPT는 키가 있을 때만 호출
+    # if os.getenv("OPENAI_API_KEY"):
+    #     tasks.append(asyncio.create_task(_wrap(f"openai:{openai_model}", call_openai(openai_model, claim))))
 
     # Gemini/Groq는 키가 있을 때만 호출
     if os.getenv("GEMINI_API_KEY"):
@@ -306,7 +312,8 @@ async def ask_llm(req: AskRequest):
         tasks.append(asyncio.create_task(_wrap(f"groq:{groq_model}", call_groq(groq_model, claim))))
 
     if not tasks:
-        raise HTTPException(500, "No providers configured. Set OLLAMA_MODEL or GEMINI_API_KEY or GROQ_API_KEY")
+        # --- 에러 메시지 변경 ---
+        raise HTTPException(500, "No providers configured. Set OPENAI_API_KEY or GEMINI_API_KEY or GROQ_API_KEY")
 
     results = await asyncio.gather(*tasks)
 
