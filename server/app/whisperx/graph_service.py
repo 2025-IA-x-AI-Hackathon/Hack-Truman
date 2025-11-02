@@ -59,7 +59,7 @@ class ArgumentGraphService:
             """
 
             response = self.client.models.generate_content(
-                model=os.getenv("GOOGLE_GEMINI_MODEL"),
+                model=os.getenv("GEMINI_MODEL"),
                 contents=prompt
             )
             
