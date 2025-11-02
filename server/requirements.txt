@@ -7,4 +7,6 @@ whisperx==3.7.4
 torch
 torchaudio
 ffmpeg-python
-google-generativeai 
+google-generativeai
+python-socketio
+aiohttp 

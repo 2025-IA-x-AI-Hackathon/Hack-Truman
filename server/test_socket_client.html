@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Socket.IO Test Client</title>
+    <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 50px auto;
+            padding: 20px;
+        }
+        .section {
+            margin: 20px 0;
+            padding: 20px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+        button {
+            padding: 10px 20px;
+            font-size: 16px;
+            cursor: pointer;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 4px;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+        #log {
+            background-color: #f4f4f4;
+            padding: 15px;
+            border-radius: 5px;
+            max-height: 400px;
+            overflow-y: auto;
+            font-family: monospace;
+            white-space: pre-wrap;
+        }
+        input {
+            width: 100%;
+            padding: 8px;
+            margin: 5px 0;
+            box-sizing: border-box;
+        }
+        .connected {
+            color: green;
+            font-weight: bold;
+        }
+        .disconnected {
+            color: red;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <h1>Socket.IO Test Client for FactRay</h1>
+
+    <div class="section">
+        <h2>연결 상태: <span id="status" class="disconnected">연결 안됨</span></h2>
+        <button onclick="connect()">연결</button>
+        <button onclick="disconnect()">연결 해제</button>
+    </div>
+
+    <div class="section">
+        <h2>분석 요청</h2>
+        <label>YouTube URL:</label>
+        <input type="text" id="videoUrl" value="https://www.youtube.com/shorts/dQw4w9WgXcQ" />
+        <br><br>
+        <button onclick="requestAnalysis()">분석 시작 (API 호출)</button>
+    </div>
+
+    <div class="section">
+        <h2>이벤트 로그</h2>
+        <button onclick="clearLog()">로그 지우기</button>
+        <div id="log"></div>
+    </div>
+
+    <script>
+        let socket = null;
+
+        function log(message) {
+            const logDiv = document.getElementById('log');
+            const timestamp = new Date().toLocaleTimeString();
+            logDiv.textContent += `[${timestamp}] ${message}\n`;
+            logDiv.scrollTop = logDiv.scrollHeight;
+        }
+
+        function clearLog() {
+            document.getElementById('log').textContent = '';
+        }
+
+        function updateStatus(connected) {
+            const statusSpan = document.getElementById('status');
+            if (connected) {
+                statusSpan.textContent = '연결됨';
+                statusSpan.className = 'connected';
+            } else {
+                statusSpan.textContent = '연결 안됨';
+                statusSpan.className = 'disconnected';
+            }
+        }
+
+        function connect() {
+            if (socket && socket.connected) {
+                log('이미 연결되어 있습니다.');
+                return;
+            }
+
+            log('Socket.IO 서버에 연결 중...');
+            socket = io('http://localhost:8000', {
+                transports: ['websocket', 'polling']
+            });
+
+            socket.on('connect', () => {
+                log('✅ 서버에 연결되었습니다!');
+                updateStatus(true);
+            });
+
+            socket.on('disconnect', () => {
+                log('❌ 서버와의 연결이 끊어졌습니다.');
+                updateStatus(false);
+            });
+
+            socket.on('info', (data) => {
+                log('📺 [INFO] 수신:');
+                log(JSON.stringify(data, null, 2));
+            });
+
+            socket.on('transcription', (data) => {
+                log('📝 [TRANSCRIPTION] 수신:');
+                log(JSON.stringify(data, null, 2));
+            });
+
+            socket.on('extract', (data) => {
+                log('🔍 [EXTRACT] 수신:');
+                log(JSON.stringify(data, null, 2));
+            });
+
+            socket.on('conclusion', (data) => {
+                log('✅ [CONCLUSION] 수신:');
+                log(JSON.stringify(data, null, 2));
+            });
+
+            socket.on('error', (error) => {
+                log('⚠️ 에러: ' + error);
+            });
+        }
+
+        function disconnect() {
+            if (socket) {
+                socket.disconnect();
+                socket = null;
+                log('연결을 해제했습니다.');
+                updateStatus(false);
+            }
+        }
+
+        async function requestAnalysis() {
+            const videoUrl = document.getElementById('videoUrl').value;
+
+            if (!videoUrl) {
+                alert('YouTube URL을 입력해주세요.');
+                return;
+            }
+
+            log(`🚀 분석 요청 시작: ${videoUrl}`);
+
+            try {
+                const response = await fetch(
+                    `http://localhost:8000/api/analysis?videoURL=${encodeURIComponent(videoUrl)}`
+                );
+
+                const result = await response.json();
+
+                if (response.ok) {
+                    log('✅ 분석 요청 성공:');
+                    log(JSON.stringify(result, null, 2));
+                } else {
+                    log('❌ 분석 요청 실패:');
+                    log(JSON.stringify(result, null, 2));
+                }
+            } catch (error) {
+                log('⚠️ API 호출 에러: ' + error.message);
+            }
+        }
+
+        // 페이지 로드 시 자동 연결
+        window.addEventListener('load', () => {
+            log('페이지가 로드되었습니다.');
+            log('Socket.IO 서버: http://localhost:8000');
+            log('API 엔드포인트: GET /api/analysis?videoURL=...');
+            log('');
+            log('수신 이벤트:');
+            log('  - info: 영상 정보 (title, thumbnail)');
+            log('  - transcription: 전사 스크립트');
+            log('  - extract: 논증 그래프');
+            log('  - conclusion: 분석 결론');
+            log('');
+            log('연결 버튼을 클릭하여 Socket.IO 서버에 연결하세요.');
+        });
+    </script>
+</body>
+</html>
