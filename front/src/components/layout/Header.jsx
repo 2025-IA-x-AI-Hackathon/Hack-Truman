@@ -25,7 +25,7 @@ const TopSection = styled.div`
   box-shadow: 0 0 30px rgba(0, 212, 255, 0.05), inset 0 1px 0 rgba(0, 212, 255, 0.1);
 `;
 
-const Logo = styled.h1`
+const Logo = styled.h3`
   font-size: ${theme.typography.h2.fontSize};
   font-weight: 700;
   color: ${theme.colors.accent};
@@ -103,7 +103,6 @@ const ProgressBarContainer = styled.div`
   margin-top: -12px;
   padding: 0 ${theme.spacing.xl};
   background: rgba(10, 10, 10, 0.6);
-  border-bottom: 1px solid rgba(0, 212, 255, 0.2);
   border-top: 1px solid rgba(0, 212, 255, 0.1);
   backdrop-filter: blur(12px);
   box-shadow: inset 0 1px 0 rgba(0, 212, 255, 0.05);
@@ -122,8 +121,8 @@ const ProgressStep = styled.div`
 `;
 
 const ProgressDot = styled.div`
-  width: 12px;
-  height: 12px;
+  width: 8px;
+  height: 8px;
   border-radius: 50%;
   background: ${(props) =>
     props.completed ? theme.colors.accent : props.active ? theme.colors.accent : 'rgba(255, 255, 255, 0.1)'};
@@ -188,7 +187,7 @@ export const Header = () => {
       transition={{ duration: 0.5 }}
     >
       <TopSection>
-        <Logo>F+R</Logo>
+        <Logo>FACTRAY</Logo>
         {videoData.title && (
           <VideoTitle
             initial={{ opacity: 0 }}
@@ -231,9 +230,9 @@ export const Header = () => {
           return (
             <ProgressStep key={step}>
               <ProgressDot active={isActive} completed={isCompleted} />
-              {/* {index < STEP_ORDER.length - 1 && (
+              {index < STEP_ORDER.length - 1 && (
                 <ProgressLine completed={isCompleted} />
-              )} */}
+              )}
               <StepLabel>{STEP_LABELS[step]}</StepLabel>
             </ProgressStep>
           );

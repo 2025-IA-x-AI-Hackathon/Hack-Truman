@@ -65,26 +65,78 @@ class AnalysisManager {
   }
 
   /**
-   * 백그라운드에서 분석 실행 (비동기)
+   * 백그라운드에서 영상 다운로드만 실행 (React 앱에서 WebSocket 처리)
    */
   async runAnalysisInBackground(videoUrl) {
     try {
-      console.log('백그라운드 분석 시작:', videoUrl);
+      console.log('백그라운드 영상 다운로드 시작:', videoUrl);
 
-      // YouTube 영상 다운로드
+      // YouTube 영상 다운로드만 수행
       const filePath = await this.fetchVideoAndGetFilePath(videoUrl);
 
       if (!filePath) {
         throw new Error('영상 파일을 가져올 수 없습니다.');
       }
 
-      // WebSocket 연결 및 분석 요청
-      await this.startWebSocketAnalysis(filePath, videoUrl);
+      console.log('영상 다운로드 완료:', filePath);
 
-      console.log('백그라운드 분석 완료:', videoUrl);
+      // 다운로드 완료 정보를 Chrome storage에 저장
+      const downloadData = {
+        videoUrl: videoUrl,
+        filePath: filePath,
+        timestamp: Date.now(),
+        status: 'ready'
+      };
+
+      // Chrome storage에 저장
+      chrome.storage.local.set(
+        { [`download_ready`]: downloadData },
+        () => {
+          console.log('다운로드 정보 저장 완료');
+
+          // React 페이지에 메시지 전송 (content script를 통해)
+          chrome.tabs.query({ url: 'http://localhost:5173/*' }, (tabs) => {
+            tabs.forEach((tab) => {
+              chrome.tabs.sendMessage(tab.id, {
+                type: 'DOWNLOAD_READY',
+                data: downloadData
+              }, (response) => {
+                if (chrome.runtime.lastError) {
+                  console.log('메시지 전송 실패:', chrome.runtime.lastError.message);
+                } else {
+                  console.log('메시지 전송 성공:', response);
+                }
+              });
+            });
+          });
+        }
+      );
+
+      // 분석 완료 알림 (UI 업데이트용)
+      if (window.uiManager) {
+        window.uiManager.resetAnalyzeButton();
+      }
+
+      console.log('백그라운드 다운로드 작업 완료:', videoUrl);
     } catch (error) {
-      console.error('백그라운드 분석 실패:', error);
+      console.error('백그라운드 다운로드 실패:', error);
       this.currentAnalysis = null;
+
+      // 에러 정보 전송
+      chrome.tabs.query({ url: 'http://localhost:5173/*' }, (tabs) => {
+        tabs.forEach((tab) => {
+          chrome.tabs.sendMessage(tab.id, {
+            type: 'DOWNLOAD_ERROR',
+            error: error.message
+          }, (response) => {
+            if (chrome.runtime.lastError) {
+              console.log('에러 메시지 전송 실패:', chrome.runtime.lastError.message);
+            } else {
+              console.log('에러 메시지 전송 성공:', response);
+            }
+          });
+        });
+      });
     }
   }
 

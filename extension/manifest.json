@@ -16,7 +16,7 @@
     },
     {
       "matches": ["http://localhost:5173/*"],
-      "js": ["analysis-site/analysis-content.js"],
+      "js": ["content-script.js"],
       "run_at": "document_end"
     }
   ],

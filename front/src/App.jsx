@@ -31,16 +31,37 @@ function AppContent() {
         thumbnail: 'https://via.placeholder.com/320x180',
       });
 
-      // WebSocket으로 분석 요청 전송
-      const analysisRequest = {
-        file_path: videoUrl, // 확장 프로그램에서 처리한 파일 경로가 전달됨
-        language: 'en',
+      // Chrome Extension으로부터 메시지 리스너 설정
+      const messageListener = (event) => {
+        // 보안을 위해 origin 확인 (확장 프로그램은 window.postMessage 사용)
+        if (event.source !== window) return;
+
+        if (event.data.type === 'DOWNLOAD_READY') {
+          console.log('Download ready from extension:', event.data.data);
+
+          // WebSocket으로 분석 요청 전송
+          const analysisRequest = {
+            file_path: event.data.data.filePath,
+            language: 'en',
+          };
+
+          // WebSocket 연결 후 분석 요청
+          setTimeout(() => {
+            send(analysisRequest);
+          }, 500);
+        } else if (event.data.type === 'DOWNLOAD_ERROR') {
+          console.error('Download error from extension:', event.data.error);
+          // TODO: 에러 처리 UI 업데이트
+        }
       };
 
-      // 약간의 지연 후 분석 요청 (WebSocket 연결 보장)
-      setTimeout(() => {
-        send(analysisRequest);
-      }, 500);
+      // 메시지 리스너 등록
+      window.addEventListener('message', messageListener);
+
+      // Cleanup
+      return () => {
+        window.removeEventListener('message', messageListener);
+      };
     }
   }, [moveToStep, updateVideoData, send]);
 
