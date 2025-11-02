@@ -10,4 +10,7 @@ ffmpeg-python
 google-generativeai 
 openai
 aiohttp 
+python-socketio
+
+
 
