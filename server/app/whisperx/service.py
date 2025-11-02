@@ -94,7 +94,7 @@ class WhisperXService:
         audio = whisperx.load_audio(file_path)
         
         # 전사 수행
-        result = model.transcribe(audio, batch_size=16, language=language)
+        result = model.transcribe(audio, batch_size=16)
         
         # 언어 감지 결과
         detected_language = result.get("language", language or "en")
