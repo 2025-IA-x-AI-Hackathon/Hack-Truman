@@ -29,7 +29,7 @@ export const WorkflowProvider = ({ children }) => {
   });
   const [verifications, setVerifications] = useState({});
   const [conclusion, setConclusion] = useState({
-    opinionCount: 0,
+    claimCount: 0,
     factCount: 0,
     trustScore: 0,
   });

@@ -79,7 +79,7 @@ const CandidateType = styled.span`
   padding: ${theme.spacing.sm} ${theme.spacing.md};
   background: ${(props) => {
     if (props.type === 'fact') return 'rgba(255, 255, 255, 0.1)';
-    if (props.type === 'opinion') return 'rgba(136, 136, 136, 0.1)';
+    if (props.type === 'claim') return 'rgba(136, 136, 136, 0.1)';
     return 'rgba(255, 255, 255, 0.05)';
   }};
   border-radius: ${theme.border.radius};
@@ -232,8 +232,8 @@ const getCardColors = (candidate, verification, isVerifyPhase) => {
   // In VERIFY phase, color based on type and trust score
   const trustScore = verification.trustScore || 0;
 
-  if (candidate.type === 'opinion') {
-    // Opinion candidates are gray
+  if (candidate.type === 'claim') {
+    // claim candidates are gray
     return {
       background: 'rgba(136, 136, 136, 0.15)',
       border: 'rgba(136, 136, 136, 0.3)',
