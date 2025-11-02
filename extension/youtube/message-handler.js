@@ -43,6 +43,19 @@ class MessageHandler {
   }
 
   /**
+   * 분석 완료 알림 전송
+   */
+  notifyAnalysisComplete(videoUrl, resultUrl) {
+    console.log('분석 완료 알림 전송:', videoUrl);
+    return this.sendToBackground({
+      type: 'ANALYSIS_DONE',
+      videoUrl: videoUrl,
+      resultUrl: resultUrl,
+      timestamp: Date.now(),
+    });
+  }
+
+  /**
    * 분석 탭으로 포커스 이동 요청
    */
   focusAnalysisTab(tabId) {
