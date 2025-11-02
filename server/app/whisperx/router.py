@@ -10,7 +10,7 @@ from app.whisperx.schemas import (
     TranscriptionSegment
 )
 from app.whisperx.system_prompt import get_classification_prompt
-from google import genai
+import google.generativeai as genai
 from typing import List, Optional
 from dotenv import load_dotenv
 
@@ -18,11 +18,11 @@ load_dotenv()
 
 router = APIRouter()
 # 싱글톤 인스턴스 사용
-key = os.getenv("GOOGLE_GEMINI_KEY")
+key = os.getenv("GEMINI_API_KEY")
 whisperx_service = WhisperXService.get_instance()
 graph_service = ArgumentGraphService(key=key)
 
-client = genai.Client(api_key=key)
+client = genai.configure(api_key=key)
 
 async def get_classify_text(text: str):
     """
