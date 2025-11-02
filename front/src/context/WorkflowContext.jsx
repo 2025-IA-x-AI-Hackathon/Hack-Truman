@@ -15,6 +15,18 @@ export const WorkflowProvider = ({ children }) => {
     timeline: [],
   });
   const [candidates, setCandidates] = useState([]);
+  const [argumentGraph, setArgumentGraph] = useState({
+    nodes: [],
+    edges: [],
+  });
+  const [extractSummary, setExtractSummary] = useState({
+    total_segments: 0,
+    claims: 0,
+    facts: 0,
+    relationships: 0,
+    relationship_types: {},
+    avg_confidence: 0,
+  });
   const [verifications, setVerifications] = useState({});
   const [conclusion, setConclusion] = useState({
     opinionCount: 0,
@@ -43,6 +55,14 @@ export const WorkflowProvider = ({ children }) => {
     setCurrentStep(step);
   }, []);
 
+  const updateArgumentGraph = useCallback((data) => {
+    setArgumentGraph((prev) => ({ ...prev, ...data }));
+  }, []);
+
+  const updateExtractSummary = useCallback((data) => {
+    setExtractSummary((prev) => ({ ...prev, ...data }));
+  }, []);
+
   const value = {
     currentStep,
     moveToStep,
@@ -52,6 +72,10 @@ export const WorkflowProvider = ({ children }) => {
     updateTranscript,
     candidates,
     setCandidates,
+    argumentGraph,
+    updateArgumentGraph,
+    extractSummary,
+    updateExtractSummary,
     verifications,
     addVerification,
     conclusion,

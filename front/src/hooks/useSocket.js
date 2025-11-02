@@ -1,61 +1,78 @@
 import { useEffect, useCallback, useRef } from 'react';
-import io from 'socket.io-client';
 
-export const useSocket = (url = 'http://localhost:3001') => {
-  const socketRef = useRef(null);
+/**
+ * WebSocket 통신 훅
+ * FastAPI의 /ws/analyze 엔드포인트와 통신
+ */
+export const useSocket = (url = 'ws://localhost:8000/ws/analyze') => {
+  const wsRef = useRef(null);
   const handlersRef = useRef({});
 
   useEffect(() => {
-    socketRef.current = io(url, {
-      reconnection: true,
-      reconnectionDelay: 1000,
-      reconnectionDelayMax: 5000,
-      reconnectionAttempts: 5,
-    });
+    // WebSocket 연결
+    wsRef.current = new WebSocket(url);
 
-    socketRef.current.on('connect', () => {
-      console.log('Socket connected');
-    });
+    wsRef.current.onopen = () => {
+      console.log('WebSocket connected');
+      if (handlersRef.current['connect']) {
+        handlersRef.current['connect']();
+      }
+    };
 
-    socketRef.current.on('disconnect', () => {
-      console.log('Socket disconnected');
-    });
+    wsRef.current.onclose = () => {
+      console.log('WebSocket disconnected');
+      if (handlersRef.current['disconnect']) {
+        handlersRef.current['disconnect']();
+      }
+    };
 
-    socketRef.current.on('error', (error) => {
-      console.error('Socket error:', error);
-    });
+    wsRef.current.onerror = (error) => {
+      console.error('WebSocket error:', error);
+      if (handlersRef.current['error']) {
+        handlersRef.current['error'](error);
+      }
+    };
+
+    wsRef.current.onmessage = (event) => {
+      try {
+        const message = JSON.parse(event.data);
+        if (message.stage && handlersRef.current[message.stage]) {
+          handlersRef.current[message.stage](message.data || message);
+        }
+      } catch (error) {
+        console.error('Error parsing WebSocket message:', error);
+      }
+    };
 
     return () => {
-      if (socketRef.current) {
-        socketRef.current.disconnect();
+      if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
+        wsRef.current.close();
       }
     };
   }, [url]);
 
   const on = useCallback((event, handler) => {
-    if (socketRef.current) {
-      handlersRef.current[event] = handler;
-      socketRef.current.on(event, handler);
-    }
+    handlersRef.current[event] = handler;
   }, []);
 
   const off = useCallback((event) => {
-    if (socketRef.current && handlersRef.current[event]) {
-      socketRef.current.off(event, handlersRef.current[event]);
+    if (handlersRef.current[event]) {
       delete handlersRef.current[event];
     }
   }, []);
 
-  const emit = useCallback((event, data) => {
-    if (socketRef.current) {
-      socketRef.current.emit(event, data);
+  const send = useCallback((data) => {
+    if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
+      wsRef.current.send(JSON.stringify(data));
+    } else {
+      console.warn('WebSocket is not connected');
     }
   }, []);
 
   return {
-    socket: socketRef.current,
+    ws: wsRef.current,
     on,
     off,
-    emit,
+    send,
   };
 };
