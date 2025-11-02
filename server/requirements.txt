@@ -7,6 +7,11 @@ whisperx==3.7.4
 torch
 torchaudio
 ffmpeg-python
+<<<<<<< HEAD
 google-generativeai
 python-socketio
 aiohttp 
+=======
+google-generativeai 
+openai
+>>>>>>> 1c7575b (feat: change llm Ollama to OpenAI)

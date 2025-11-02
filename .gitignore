@@ -208,5 +208,9 @@ __marimo__/
 
 .claude/
 
+<<<<<<< HEAD
 .DS_Store
 */.DS_Store
+=======
+.DS_Store
+>>>>>>> 1c7575b (feat: change llm Ollama to OpenAI)
