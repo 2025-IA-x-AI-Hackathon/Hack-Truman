@@ -101,7 +101,7 @@ emit('request_analysis', {})
 {
   candidates: Array<{
     id: string,              // 고유 ID
-    type: 'fact' | 'opinion', // 유형
+    type: 'fact' | 'claim', // 유형
     text: string,            // 후보 텍스트
     timestamp: string        // 영상 내 시간 (MM:SS)
   }>
@@ -121,8 +121,8 @@ emit('request_analysis', {})
       timestamp: '0:05'
     },
     {
-      id: 'opinion_1',
-      type: 'opinion',
+      id: 'claim_1',
+      type: 'claim',
       text: 'Electric vehicles will completely replace gas cars by 2035',
       timestamp: '0:30'
     }
@@ -177,7 +177,7 @@ emit('request_analysis', {})
 **데이터 형식**:
 ```javascript
 {
-  opinionCount: number,    // 의견 개수
+  claimCount: number,    // 의견 개수
   factCount: number,       // 팩트 개수
   trustScore: number       // 최종 신뢰도 (0-100)
 }
@@ -188,7 +188,7 @@ emit('request_analysis', {})
 **예시**:
 ```javascript
 {
-  opinionCount: 2,
+  claimCount: 2,
   factCount: 3,
   trustScore: 68
 }
@@ -315,7 +315,7 @@ on('verification', (data) => {
 
 on('conclusion', (data) => {
   console.log('최종 평가:', data);
-  // { opinionCount, factCount, trustScore }
+  // { claimCount, factCount, trustScore }
 });
 
 on('error', (error) => {

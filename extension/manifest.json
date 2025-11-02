@@ -1,0 +1,28 @@
+{
+  "manifest_version": 3,
+  "name": "FactRay Extension",
+  "version": "1.0",
+  "description": "Shorts 영상 분석 및 알림",
+  "content_scripts": [
+    {
+      "matches": ["*://www.youtube.com/*"],
+      "js": [
+        "youtube/message-handler.js",
+        "youtube/analysis-manager.js",
+        "youtube/ui-manager.js",
+        "youtube/youtube-main.js"
+      ],
+      "run_at": "document_end"
+    },
+    {
+      "matches": ["http://localhost:5173/*"],
+      "js": ["content-script.js"],
+      "run_at": "document_end"
+    }
+  ],
+  "background": {
+    "service_worker": "background.js"
+  },
+  "permissions": ["storage", "notifications", "tabs"],
+  "host_permissions": ["*://www.youtube.com/*", "http://localhost:5173/*", "http://localhost:8000/*"]
+}

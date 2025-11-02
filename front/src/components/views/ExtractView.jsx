@@ -1,7 +1,9 @@
 import styled from 'styled-components';
 import { motion } from 'framer-motion';
+import { useEffect } from 'react';
 import { theme } from '../../styles/theme';
 import { useWorkflow } from '../../context/WorkflowContext';
+import { useSocket } from '../../hooks/useSocket';
 
 const ExtractContainer = styled.div`
   display: flex;
@@ -65,8 +67,71 @@ const Label = styled.p`
   letter-spacing: 0.05em;
 `;
 
+const SummarySection = styled(motion.div)`
+  width: 200px;
+  flex-shrink: 0;
+  background: ${theme.glass.container};
+  border: ${theme.border.width} solid ${theme.glass.border};
+  border-radius: ${theme.border.radius};
+  padding: ${theme.spacing.lg};
+  overflow-y: auto;
+  backdrop-filter: blur(10px);
+`;
+
+const StatItem = styled.div`
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: ${theme.spacing.md};
+  font-size: ${theme.typography.body.fontSize};
+  color: ${theme.colors.primary};
+
+  &:last-child {
+    margin-bottom: 0;
+  }
+`;
+
+const StatLabel = styled.span`
+  color: ${theme.colors.tertiary};
+`;
+
+const StatValue = styled.span`
+  font-weight: 600;
+  color: ${theme.colors.secondary};
+`;
+
 export const ExtractView = () => {
-  const { videoData, transcript } = useWorkflow();
+  const { videoData, transcript, argumentGraph, extractSummary, updateTranscript, updateArgumentGraph, updateExtractSummary } = useWorkflow();
+  const { on, send } = useSocket();
+
+  // WebSocket 메시지 수신 설정
+  useEffect(() => {
+    on('extract', (data) => {
+      console.log('Extract data received:', data);
+
+      // Transcript 업데이트
+      if (data.full_text) {
+        updateTranscript({ text: data.full_text });
+      }
+
+      // Argument Graph 업데이트
+      if (data.argument_graph) {
+        updateArgumentGraph(data.argument_graph);
+      }
+
+      // Summary 업데이트
+      if (data.summary) {
+        updateExtractSummary(data.summary);
+      }
+    });
+
+    on('error', (error) => {
+      console.error('WebSocket error:', error);
+    });
+
+    return () => {
+      // Cleanup if needed
+    };
+  }, [on, updateTranscript, updateArgumentGraph, updateExtractSummary]);
 
   // Split transcript into chunks for animation
   const transcriptChunks = transcript.text
@@ -133,6 +198,36 @@ export const ExtractView = () => {
           )}
         </TranscriptContainer>
       </TranscriptSection>
+
+      <SummarySection
+        initial={{ opacity: 0, x: 20 }}
+        animate={{ opacity: 1, x: 0 }}
+        transition={{ duration: 0.5, delay: 0.2 }}
+      >
+        <Label>Summary</Label>
+        <StatItem>
+          <StatLabel>Segments:</StatLabel>
+          <StatValue>{extractSummary.total_segments}</StatValue>
+        </StatItem>
+        <StatItem>
+          <StatLabel>Claims:</StatLabel>
+          <StatValue>{extractSummary.claims}</StatValue>
+        </StatItem>
+        <StatItem>
+          <StatLabel>Facts:</StatLabel>
+          <StatValue>{extractSummary.facts}</StatValue>
+        </StatItem>
+        <StatItem>
+          <StatLabel>Relationships:</StatLabel>
+          <StatValue>{extractSummary.relationships}</StatValue>
+        </StatItem>
+        {extractSummary.avg_confidence > 0 && (
+          <StatItem>
+            <StatLabel>Avg Confidence:</StatLabel>
+            <StatValue>{(extractSummary.avg_confidence * 100).toFixed(1)}%</StatValue>
+          </StatItem>
+        )}
+      </SummarySection>
     </ExtractContainer>
   );
 };

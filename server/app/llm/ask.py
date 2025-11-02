@@ -42,7 +42,7 @@ For each distinct claim made in the video (by sentence or logical unit), perform
 
 Summary: Condense the claim into one clear sentence.
 
-Verification Result: Classify as one of True / False / Opinion / Uncertain.
+Verification Result: Classify as one of True / False / claim / Uncertain.
 
 Detailed Evidence: Provide the supporting source(s) — including source name, title of the document/article, publication date, and link — and summarize the evidence in no more than two sentences.
 
