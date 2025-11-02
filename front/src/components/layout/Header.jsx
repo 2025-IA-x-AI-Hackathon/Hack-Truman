@@ -15,8 +15,8 @@ const HeaderContainer = styled(motion.header)`
 
 const TopSection = styled.div`
   backdrop-filter: blur(15px);
-  border-bottom: 1px solid rgba(0, 212, 255, 0.3);
-  background: rgba(10, 10, 10, 0.8);
+  border-bottom: 1px solid rgba(0, 255, 204, 0.3);
+  // background: rgba(10, 10, 10,);
   display: flex;
   z-index: 100;
   justify-content: space-between;
@@ -29,21 +29,15 @@ const TopSection = styled.div`
 const Logo = styled.h3`
   font-size: ${theme.typography.h2.fontSize};
   font-weight: 700;
-  color: ${theme.colors.accent};
+  color: white;
   letter-spacing: 0.1em;
   margin: 0;
+  font-size: 1.5rem;
   font-family: ${theme.typography.retroFont};
-  text-shadow: 0 0 20px rgba(0, 212, 255, 0.5);
+  text-shadow: 0 0 20px rgba(0, 114, 88, 0.5);
   font-style: italic;
 `;
 
-const VideoTitle = styled(motion.h2)`
-  font-size: ${theme.typography.body.fontSize};
-  color: ${theme.colors.tertiary};
-  text-align: center;
-  flex: 1;
-  margin: 0;
-`;
 
 const MenuButton = styled(motion.button)`
   background: transparent;
@@ -103,7 +97,7 @@ const ProgressBarContainer = styled.div`
   height: 24px;
   margin-top: -12px;
   padding: 0 ${theme.spacing.xl};
-  background: rgba(10, 10, 10, 0.6);
+  // background: rgba(10, 10, 10, 0.6);
   border-top: 1px solid rgba(0, 212, 255, 0.1);
   backdrop-filter: blur(12px);
   box-shadow: inset 0 1px 0 rgba(0, 212, 255, 0.05);
@@ -176,7 +170,7 @@ const StepLabel = styled(motion.span)`
 `;
 
 export const Header = () => {
-  const { currentStep, videoData } = useWorkflow();
+  const { currentStep } = useWorkflow();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
 
   const currentStepIndex = STEP_ORDER.indexOf(currentStep);
@@ -189,15 +183,7 @@ export const Header = () => {
     >
       <TopSection>
         <Logo>FACTRAY</Logo>
-        {videoData.title && (
-          <VideoTitle
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 0.2 }}
-          >
-            {videoData.title}
-          </VideoTitle>
-        )}
+        <div style={{ flex: 1 }}></div>
         <div style={{ position: 'relative' }}>
           <MenuButton
             onClick={() => setIsMenuOpen(!isMenuOpen)}

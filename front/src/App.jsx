@@ -15,9 +15,13 @@ function AppContent() {
 
   useEffect(() => {
     // URL 파라미터에서 videoUrl 추출 (확장 프로그램에서 전달)
+    
     const params = new URLSearchParams(window.location.search);
     const videoUrl = params.get('videoUrl');
-
+    const parmas = {"videoURL": videoUrl}
+    const queryString = new URLSearchParams(parmas).toString();  // url에 쓰기 적합한 querySting으로 return 해준다. 
+    const requrl = `http://localhost:8000/api/analysis?${queryString}`;   // 완성된 요청 url.
+    fetch(requrl);
     if (videoUrl) {
       console.log('확장 프로그램에서 전달받은 videoUrl:', videoUrl);
 

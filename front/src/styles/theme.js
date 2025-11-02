@@ -6,7 +6,7 @@ export const theme = {
     primary: '#ffffff',
     secondary: '#f0f0f0',
     tertiary: '#e0e0e0',
-    background: '#0a0a0a',
+    background: '0a0a0a;',
     accent: '#00d4ff',
     success: '#00ff00',
     error: '#ff4444',
