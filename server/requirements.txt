@@ -14,4 +14,12 @@ aiohttp
 =======
 google-generativeai 
 openai
+<<<<<<< HEAD
 >>>>>>> 1c7575b (feat: change llm Ollama to OpenAI)
+=======
+aiohttp 
+python-socketio
+
+
+
+>>>>>>> 637c635 (add)
