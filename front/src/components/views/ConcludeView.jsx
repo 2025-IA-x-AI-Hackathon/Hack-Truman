@@ -301,8 +301,8 @@ export const ConcludeView = () => {
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.3 }}
         >
-          <StatNumber>{conclusion.opinionCount}</StatNumber>
-          <StatLabel>Opinions</StatLabel>
+          <StatNumber>{conclusion.claimCount}</StatNumber>
+          <StatLabel>claims</StatLabel>
         </Stat>
       </StatsContainer>
 

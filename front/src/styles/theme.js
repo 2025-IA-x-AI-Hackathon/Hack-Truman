@@ -11,7 +11,7 @@ export const theme = {
     success: '#00ff00',
     error: '#ff4444',
     warning: '#ffaa00',
-    opinion: '#888888',
+    claim: '#888888',
     factTrue: '#ffffff',
     factFalse: '#ff4444',
   },

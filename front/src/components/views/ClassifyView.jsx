@@ -58,7 +58,7 @@ const CandidateTitle = styled.p`
   margin-bottom: ${theme.spacing.md};
   color: ${(props) => {
     if (props.type === 'fact') return theme.colors.primary;
-    if (props.type === 'opinion') return theme.colors.opinion;
+    if (props.type === 'claim') return theme.colors.claim;
     return theme.colors.primary;
   }};
 `;
@@ -71,7 +71,7 @@ const CandidateType = styled.span`
   padding: ${theme.spacing.sm} ${theme.spacing.md};
   background: ${(props) => {
     if (props.type === 'fact') return 'rgba(255, 255, 255, 0.1)';
-    if (props.type === 'opinion') return 'rgba(136, 136, 136, 0.1)';
+    if (props.type === 'claim') return 'rgba(136, 136, 136, 0.1)';
     return 'rgba(255, 255, 255, 0.05)';
   }};
   border-radius: ${theme.border.radius};

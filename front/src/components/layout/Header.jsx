@@ -9,6 +9,7 @@ const HeaderContainer = styled(motion.header)`
   display: flex;
   flex-direction: column;
   gap: 0;
+  height: 5rem;
   position: relative;
 `;
 
@@ -46,9 +47,9 @@ const VideoTitle = styled(motion.h2)`
 
 const MenuButton = styled(motion.button)`
   background: transparent;
-  border: ${theme.border.width} solid ${theme.glass.border};
+  // border: ${theme.border.width} solid ${theme.glass.border};
   color: ${theme.colors.primary};
-  padding: ${theme.spacing.md};
+  padding: ${theme.spacing.sm};
   border-radius: ${theme.border.radius};
   cursor: pointer;
   font-size: 1.5rem;
