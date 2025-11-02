@@ -9,7 +9,6 @@ const LoadingContainer = styled.div`
   justify-content: center;
   align-items: center;
   width: 100%;
-  gap: ${theme.spacing.xl};
 `;
 
 const Thumbnail = styled(motion.img)`

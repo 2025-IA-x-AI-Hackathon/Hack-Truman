@@ -9,6 +9,7 @@ import { InfoView } from '../views/InfoView';
 import { ExtractView } from '../views/ExtractView';
 import { CandidateAnalysisView } from '../views/CandidateAnalysisView';
 import { ConcludeView } from '../views/ConcludeView';
+import { VideoTitle } from '../common/VideoTitle';
 
 const ContentContainer = styled(motion.main)`
   flex: 1;
@@ -18,6 +19,7 @@ const ContentContainer = styled(motion.main)`
   flex-direction: column;
   position: relative;
   scroll-behavior: smooth;
+  align-items: center;
 
   /* Custom scrollbar */
   &::-webkit-scrollbar {
@@ -40,7 +42,6 @@ const ContentContainer = styled(motion.main)`
 
 // Fullscreen view with centered content
 const FullscreenView = styled(motion.section)`
-  min-height: 100vh;
   width: 100%;
   padding: ${theme.spacing.xl};
   display: flex;
@@ -113,7 +114,6 @@ const ShareButton = styled(TranscriptButton)`
 
 // Classify candidates section with scrollable area below
 const ClassifySection = styled(motion.section)`
-  min-height: 100vh;
   width: 100%;
   padding: ${theme.spacing.xl};
   display: flex;
@@ -126,7 +126,6 @@ const ClassifySection = styled(motion.section)`
 
 // Conclude appears below classify with scroll reveal
 const ConcludeSection = styled(motion.section)`
-  min-height: 100vh;
   width: 100%;
   padding: ${theme.spacing.xl};
   display: flex;
@@ -180,6 +179,9 @@ export const MainContent = () => {
 
   return (
     <ContentContainer ref={containerRef}>
+      {/* Video Title - shows when we have video data */}
+      <VideoTitle />
+
       <AnimatePresence mode="wait">
         {showLoading && (
           <FullscreenView
