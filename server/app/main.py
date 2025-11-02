@@ -3,6 +3,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from app.youtube import router as youtube_router
 from app.whisperx.router import router as whisperx_router
 from app.whisperx import WhisperXService
+from app.llm.ask import router as llm_router
 
 app = FastAPI(
     title="STT & OpenAI API",
@@ -34,6 +35,7 @@ WhisperXService.get_instance()
 
 app.include_router(youtube_router, prefix="/api/youtube", tags=["YouTube"])
 app.include_router(whisperx_router, prefix="/api/stt", tags=["STT"])
+app.include_router(llm_router)
 
 
 @app.get("/", tags=["Root"])
