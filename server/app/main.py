@@ -4,6 +4,8 @@ from app.youtube import router as youtube_router
 from app.whisperx.router import router as whisperx_router
 from app.whisperx import WhisperXService
 from app.llm.ask import router as llm_router
+from app.analysis import router as analysis_router
+from app.socket_manager import socket_app
 
 app = FastAPI(
     title="STT & OpenAI API",
@@ -36,6 +38,10 @@ WhisperXService.get_instance()
 app.include_router(youtube_router, prefix="/api/youtube", tags=["YouTube"])
 app.include_router(whisperx_router, prefix="/api/stt", tags=["STT"])
 app.include_router(llm_router)
+app.include_router(analysis_router, prefix="/api", tags=["Analysis"])
+
+# Socket.IO 마운트
+app.mount("/socket.io", socket_app)
 
 
 @app.get("/", tags=["Root"])
