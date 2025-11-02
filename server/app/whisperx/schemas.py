@@ -5,7 +5,7 @@ from enum import Enum
 class STTRequest(BaseModel):
     """STT 변환 요청"""
     file_path: str = Field(..., description="Audio file path")
-    language: Optional[str] = Field("ko", description="Language code (ko, en, etc.)")
+    language: str = Field("auto", description="Language code (ko, en, etc.)")
     
     class Config:
         json_schema_extra = {
@@ -34,8 +34,6 @@ class TranscriptionSegment(BaseModel):
 
 class STTResponse(BaseModel):
     """STT 변환 응답"""
-    file_path: str = Field(..., description="Original audio file path")
-    language: str = Field(..., description="Detected/specified language")
     segments: List[TranscriptionSegment] = Field(..., description="Transcription segments")
     full_text: str = Field(..., description="Complete transcribed text")
     
@@ -166,12 +164,10 @@ class ArgumentGraph(BaseModel):
 
 class STTWithGraphResponse(BaseModel):
     """STT + 그래프 분석 응답"""
-    file_path: str = Field(..., description="Original audio file path")
-    language: str = Field(..., description="Detected/specified language")
     full_text: str = Field(..., description="Complete transcribed text")
     argument_graph: ArgumentGraph = Field(..., description="논증 그래프")
     summary: dict = Field(..., description="분석 요약")
-    
+
     class Config:
         json_schema_extra = {
             "example": {

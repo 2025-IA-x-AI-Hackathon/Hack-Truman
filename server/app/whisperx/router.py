@@ -65,19 +65,6 @@ async def transcribe_audio(request: STTRequest):
             cache_service = STTCacheService()
             cache_service.save_result(request.file_path, request.language, result)
         
-        # 각 세그먼트에 대해 분류 수행
-        segments: List[TranscriptionSegment] = result.segments
-        
-        # 비동기로 모든 세그먼트 분류 실행
-        classification_tasks = [get_classify_text(seg.text) for seg in segments]
-        classification_results = await asyncio.gather(*classification_tasks)
-        
-        # 분류 결과 출력 (로깅용)
-        for i, (segment, classification) in enumerate(zip(segments, classification_results)):
-            print(f"세그먼트 {i+1}: {segment.text}")
-            print(f"분류 결과: {classification}")
-            print("-" * 50)
-        
         return result
     except FileNotFoundError as e:
         raise HTTPException(status_code=404, detail=str(e))
@@ -113,6 +100,73 @@ def exist_text_translate(file_path: str, language: str) -> Optional[STTResponse]
     print("기존 STT 변환 파일 없음 - 새로 변환 진행")
     return None
 
+async def extract_transcribe_with_graph(result: STTResponse, segments: List[TranscriptionSegment]):
+     # 각 세그먼트 분류
+    classification_tasks = [get_classify_text(seg.text) for seg in segments]
+    classification_results = await asyncio.gather(*classification_tasks)
+    
+    # 논증 그래프 구성
+    argument_graph = await graph_service.build_argument_graph(
+        segments, classification_results
+    )
+    
+    # CLAIM-EVIDENCE 매핑 생성
+    from app.whisperx.convert_claim_fact_mapped import (
+        convert_to_claim_evidence, 
+        get_claim_evidence_summary,
+        format_claim_evidence_text
+    )
+    
+    claim_evidence = convert_to_claim_evidence(argument_graph)
+    claim_evidence_summary = get_claim_evidence_summary(argument_graph)
+    claim_evidence_text = format_claim_evidence_text(argument_graph)
+    
+    # 결과 출력 (로깅용)
+    # print("==== CLAIM-EVIDENCE 매핑 =====")
+    # print(claim_evidence_text)
+    
+    # 분석 요약 생성
+    summary = graph_service.generate_graph_summary(argument_graph)    
+    # print("=== 논증 그래프 분석 결과 ===")
+    # print(f"총 세그먼트: {summary['total_segments']}")
+    # print(f"주장(CLAIM): {summary['claims']}")
+    # print(f"사실(FACT): {summary['facts']}")
+    # print(f"관계: {summary['relationships']}")
+    # print(f"관계 유형: {summary['relationship_types']}")
+    # print(f"평균 신뢰도: {summary['avg_confidence']:.2f}")
+    
+    # print("\n=== 그래프 노드 ===")
+    # for node in argument_graph.nodes:
+    #     print(f"{node.id} ({node.classification}): {node.text}")
+    
+    # print("\n=== 그래프 엣지 ===")
+    # for edge in argument_graph.edges:
+    #     print(f"{edge.source_id} --[{edge.relationship}({edge.confidence:.2f})]-> {edge.target_id}")
+
+    # 요약에 CLAIM-EVIDENCE 정보 추가
+    summary.update({
+        "claim_evidence_mapping": claim_evidence,
+        "claim_evidence_summary": claim_evidence_summary
+    })
+   
+    return STTWithGraphResponse(
+        full_text=result.full_text,
+        argument_graph=argument_graph,
+        summary=summary
+    )
+
+async def extract_with_graph(request) -> STTWithGraphResponse:
+    try:
+        segments: List[TranscriptionSegment] = request.segments
+        return await extract_transcribe_with_graph(request, segments)
+    except FileNotFoundError as e:
+        raise HTTPException(status_code=404, detail=str(e))
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail=f"STT + 그래프 분석 중 오류가 발생했습니다: {str(e)}"
+        )
+    
 @router.post("/transcribe-with-graph", response_model=STTWithGraphResponse)
 async def transcribe_with_graph(request: STTRequest):
     """
@@ -138,64 +192,7 @@ async def transcribe_with_graph(request: STTRequest):
             cache_service.save_result(request.file_path, request.language, result)
         
         segments: List[TranscriptionSegment] = result.segments
-        
-        # 각 세그먼트 분류
-        classification_tasks = [get_classify_text(seg.text) for seg in segments]
-        classification_results = await asyncio.gather(*classification_tasks)
-        
-        # 논증 그래프 구성
-        argument_graph = await graph_service.build_argument_graph(
-            segments, classification_results
-        )
-        
-        # CLAIM-EVIDENCE 매핑 생성
-        from app.whisperx.convert_claim_fact_mapped import (
-            convert_to_claim_evidence, 
-            get_claim_evidence_summary,
-            format_claim_evidence_text
-        )
-        
-        claim_evidence = convert_to_claim_evidence(argument_graph)
-        claim_evidence_summary = get_claim_evidence_summary(argument_graph)
-        claim_evidence_text = format_claim_evidence_text(argument_graph)
-        
-        # 결과 출력 (로깅용)
-        print("==== CLAIM-EVIDENCE 매핑 =====")
-        print(claim_evidence_text)
-        
-        # 분석 요약 생성
-        summary = graph_service.generate_graph_summary(argument_graph)
-        
-        print("=== 논증 그래프 분석 결과 ===")
-        print(f"총 세그먼트: {summary['total_segments']}")
-        print(f"주장(CLAIM): {summary['claims']}")
-        print(f"사실(FACT): {summary['facts']}")
-        print(f"관계: {summary['relationships']}")
-        print(f"관계 유형: {summary['relationship_types']}")
-        print(f"평균 신뢰도: {summary['avg_confidence']:.2f}")
-        
-        print("\n=== 그래프 노드 ===")
-        for node in argument_graph.nodes:
-            print(f"{node.id} ({node.classification}): {node.text}")
-        
-        print("\n=== 그래프 엣지 ===")
-        for edge in argument_graph.edges:
-            print(f"{edge.source_id} --[{edge.relationship}({edge.confidence:.2f})]-> {edge.target_id}")
-
-        # 요약에 CLAIM-EVIDENCE 정보 추가
-        summary.update({
-            "claim_evidence_mapping": claim_evidence,
-            "claim_evidence_summary": claim_evidence_summary
-        })
-
-        return STTWithGraphResponse(
-            file_path=result.file_path,
-            language=result.language,
-            full_text=result.full_text,
-            argument_graph=argument_graph,
-            summary=summary
-        )
-        
+        return await extract_transcribe_with_graph(result, segments)
     except FileNotFoundError as e:
         raise HTTPException(status_code=404, detail=str(e))
     except Exception as e:
