@@ -8,3 +8,4 @@ torch
 torchaudio
 ffmpeg-python
 google-generativeai 
+openai
